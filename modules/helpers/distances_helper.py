@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics.pairwise import cosine_distances
 from numpy.linalg import norm as euclidean_norm
 from scipy.stats import entropy
@@ -24,3 +25,16 @@ def cos_dist(p, q):
 
 def hellinger_dist(p, q):
     return np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q)) ** 2)) / np.sqrt(2)
+
+
+def calculate_distances(dist_fun, _phi, _phi_other, _debug_print=False):
+    if _debug_print:
+        print '[{}] take_distances between {} columns and {} columns'.format(datetime.now(), len(_phi.columns), len(_phi_other.columns))
+    distances = pd.DataFrame(0, index = _phi.columns, columns=_phi_other.columns)
+    for idx, col in enumerate(_phi.columns):
+        if _debug_print and idx % 20 == 0:
+            print '[{}] column {} / {}'.format(datetime.now(), idx, len(_phi.columns))
+        for idx_other, col_other in enumerate(_phi_other.columns):
+            distance = dist_fun(_phi[col], _phi_other[col_other])
+            distances.iloc[idx, idx_other] = distance
+    return distances

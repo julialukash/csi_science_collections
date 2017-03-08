@@ -8,19 +8,6 @@ from datetime import datetime
 from scipy.optimize import minimize
 from os import path, mkdir
 
-
-def calculate_distances(dist_fun, _phi, _phi_other, _debug_print=False):
-    if _debug_print:
-        print '[{}] take_distances between {} columns and {} columns'.format(datetime.now(), len(_phi.columns), len(_phi_other.columns))
-    distances = pd.DataFrame(0, index = _phi.columns, columns=_phi_other.columns)
-    for idx, col in enumerate(_phi.columns):
-        if _debug_print and idx % 20 == 0:
-            print '[{}] column {} / {}'.format(datetime.now(), idx, len(_phi.columns))
-        for idx_other, col_other in enumerate(_phi_other.columns):
-            distance = dist_fun(_phi[col], _phi_other[col_other])
-            distances.iloc[idx, idx_other] = distance
-    return distances
-
 # =========================================================== em ===========================================================
 
 EPS = 1e-30
@@ -192,7 +179,7 @@ def filter_convex_hull(phi_convex_hull, get_topics_to_remove_fn, dist_fn, get_re
         previous_runs_opt_res = [val['opt_res'] for tmp in previous_iterations_info_list for val in tmp['iterations_info_filter']]    
     else:
         previous_runs_opt_res = []
-    distances_model_iter = calculate_distances(dist_fn, phi_convex_hull, phi_convex_hull)
+    distances_model_iter = dh.calculate_distances(dist_fn, phi_convex_hull, phi_convex_hull)
     iterations_info = []
     for n_iteration in range(max_iteration):
         print('[{}] filtering iteration = {} / {}'.format(datetime.now(), n_iteration + 1, max_iteration))
