@@ -16,7 +16,7 @@ def create_model_complex(current_dictionary, n_topics, n_doc_passes, seed_value,
                                 common_topics=common_topics, subject_topics=subject_topics, class_name=class_name)
     return model
 
-def add_complex_scores_to_model(artm_model, n_top_tokens, p_mass_threshold,
+def add_complex_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_threshold,
     common_topics, subject_topics, class_name, _debug_print=False):
     if _debug_print:
         print '[{}] adding scores'.format(datetime.now())
@@ -43,6 +43,18 @@ def add_complex_scores_to_model(artm_model, n_top_tokens, p_mass_threshold,
                           topic_names=common_topics, probability_mass_threshold=p_mass_threshold))
     artm_model.scores.add(artm.TopTokensScore(name='top_tokens_score_common', class_id=class_name, 
                           topic_names=common_topics, num_tokens=n_top_tokens))
+    
+    # both
+    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_0.5', class_id=class_name,
+                                                          delta_threshold=0.5, save_tokens=True))
+    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_0.25', class_id=class_name,
+                                                          delta_threshold=0.25, save_tokens=True))
+    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_0.75', class_id=class_name,
+                                                          delta_threshold=0.75, save_tokens=True))
+    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_2', class_id=class_name,
+                                                          delta_threshold=2, save_tokens=True))
+    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_5', class_id=class_name,
+                                                          delta_threshold=5, save_tokens=True))
 
 def fit_one_model_complex(plot_maker, batch_vectorizer, models_file, config, 
                           model, _n_iterations, _model_name='', _debug_print=False): 

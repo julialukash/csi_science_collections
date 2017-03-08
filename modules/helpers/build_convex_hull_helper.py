@@ -9,6 +9,19 @@ from scipy.optimize import minimize
 from os import path, mkdir
 
 
+def calculate_distances(dist_fun, _phi, _phi_other, _debug_print=False):
+    if _debug_print:
+        print '[{}] take_distances between {} columns and {} columns'.format(datetime.now(), len(_phi.columns), len(_phi_other.columns))
+    distances = pd.DataFrame(0, index = _phi.columns, columns=_phi_other.columns)
+    for idx, col in enumerate(_phi.columns):
+        if _debug_print and idx % 20 == 0:
+            print '[{}] column {} / {}'.format(datetime.now(), idx, len(_phi.columns))
+        for idx_other, col_other in enumerate(_phi_other.columns):
+            distance = dist_fun(_phi[col], _phi_other[col_other])
+            distances.iloc[idx, idx_other] = distance
+    return distances
+
+# =========================================================== em ===========================================================
 
 EPS = 1e-30
 INF = 1e+10
@@ -57,7 +70,6 @@ def plsa_em_vectorized_fixed_phi(n_dw, num_topics, Phi_init, max_iter=25, Theta_
 
 def get_em_result(dist_fn, jac_dist_fn, phi, phi_other, distances, previous_opt_result, 
                   n_closest_topics, _debug_print=False):
-# def get_em_result(dist_fn, phi, phi_other, _debug_print=False):
     phi_other_columns = phi_other.columns
     # cut distances by phi columns 
     cut_distances = distances[phi_other_columns]
@@ -80,7 +92,6 @@ def get_em_result(dist_fn, jac_dist_fn, phi, phi_other, distances, previous_opt_
                  'x': x_values[:, idx]} for idx, col in enumerate(phi.columns)}
     return res
 
-#def get_em_result_one_matrix(dist_fn, phi, _debug_print=False):
 def get_em_result_one_matrix(dist_fn, jac_dist_fn, phi, distances, 
                              previous_opt_result, n_closest_topics, _debug_print=False):
     opt_results = {}
@@ -95,18 +106,8 @@ def get_em_result_one_matrix(dist_fn, jac_dist_fn, phi, distances,
     return opt_results
 
 
-def calculate_distances(dist_fun, _phi, _phi_other, _debug_print=False):
-    if _debug_print:
-        print '[{}] take_distances between {} columns and {} columns'.format(datetime.now(), len(_phi.columns), len(_phi_other.columns))
-    distances = pd.DataFrame(0, index = _phi.columns, columns=_phi_other.columns)
-    for idx, col in enumerate(_phi.columns):
-        if _debug_print and idx % 20 == 0:
-            print '[{}] column {} / {}'.format(datetime.now(), idx, len(_phi.columns))
-        for idx_other, col_other in enumerate(_phi_other.columns):
-            distance = dist_fun(_phi[col], _phi_other[col_other])
-            distances.iloc[idx, idx_other] = distance
-    return distances
 
+# =========================================================== opt ===========================================================
 def get_optimization_result_one_matrix(dist_fn, jac_dist_fn, phi, distances,
                                        previous_opt_result, n_closest_topics, _debug_print=False):
     opt_results = {}
@@ -131,17 +132,6 @@ def get_optimization_result(dist_fn, jac_dist_fn, phi, phi_other, distances, n_c
                                                            previous_opt_result,
                                                            n_closest_topics)
     return opt_results
-
-def extract_previous_opt_result(previous_opt_result, column, closest_column_names):
-    res = None
-    if len(previous_opt_result) == 0:
-        return res
-    closest_column_names = set(closest_column_names)
-    # previous_opt_result - list of dict-opts from filter one matrix     
-    previous_opt_result = [dic[column] for dic in previous_opt_result if column in dic.keys() and set(dic[column]['column_names']) == closest_column_names]
-    if len(previous_opt_result):
-        res = previous_opt_result[0]
-    return res
 
 def solve_optimization_problem(dist_fn, jac_dist_fn, column, column_name, phi, distances, 
                                previous_opt_result,
@@ -182,7 +172,19 @@ def solve_optimization_problem(dist_fn, jac_dist_fn, column, column_name, phi, d
 #     res['column'] = column
     return res
 
+# =========================================================== previous opt ===========================================================
+def extract_previous_opt_result(previous_opt_result, column, closest_column_names):
+    res = None
+    if len(previous_opt_result) == 0:
+        return res
+    closest_column_names = set(closest_column_names)
+    # previous_opt_result - list of dict-opts from filter one matrix     
+    previous_opt_result = [dic[column] for dic in previous_opt_result if column in dic.keys() and set(dic[column]['column_names']) == closest_column_names]
+    if len(previous_opt_result):
+        res = previous_opt_result[0]
+    return res
 
+# =========================================================== common methods ===========================================================
 def filter_convex_hull(phi_convex_hull, get_topics_to_remove_fn, dist_fn, get_result_one_matrix_fn,
                        n_closest_topics_count, opt_fun_threshold, max_iteration, 
                        previous_iterations_info_list=[], use_previous_iterations=False):
@@ -321,7 +323,7 @@ def build_convex_hull_delayed_filtering(create_model_fn, get_topics_to_remove_fn
     return phi_convex_hull, iterations_info, iterations_info_filter_list
 
 
-
+# =========================================================== remove columns ===========================================================
 def get_topics_to_remove_by_opt_fun_and_distance(opt_res, distances, n_closest, opt_fun_threshold):
     small_dist_opts = {k:i for k, i in opt_res.iteritems() if i['fun'] < opt_fun_threshold}
     sorted_by_fun = sorted(small_dist_opts.values(), key = lambda opt: opt['fun'])
