@@ -6,18 +6,20 @@ from os import path, mkdir
 
 
 def create_model_complex(current_dictionary, n_topics, n_doc_passes, seed_value, n_top_tokens, p_mass_threshold, 
-                         common_topics, subject_topics, class_name='@default_class', _debug_print=False):    
+                         common_topics, subject_topics, class_name='@default_class',
+                         background_tokens_ratio_score_coeffs=[], _debug_print=False):    
     if _debug_print:
         print '[{}] creating model'.format(datetime.now())
     model = artm.ARTM(num_topics=n_topics, dictionary=current_dictionary, cache_theta=True, seed=seed_value, 
                       class_ids={class_name: 1.0})
     model.num_document_passes = n_doc_passes
     add_complex_scores_to_model(model, current_dictionary, n_top_tokens=n_top_tokens, p_mass_threshold=p_mass_threshold, 
-                                common_topics=common_topics, subject_topics=subject_topics, class_name=class_name)
+                                common_topics=common_topics, subject_topics=subject_topics, class_name=class_name,
+                                background_tokens_ratio_score_coeffs=background_tokens_ratio_score_coeffs)
     return model
 
 def add_complex_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_threshold,
-    common_topics, subject_topics, class_name, _debug_print=False):
+    common_topics, subject_topics, class_name, background_tokens_ratio_score_coeffs, _debug_print=False):
     if _debug_print:
         print '[{}] adding scores'.format(datetime.now())
     # subject
@@ -31,8 +33,10 @@ def add_complex_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_thr
                           topic_names=subject_topics, probability_mass_threshold=p_mass_threshold))
     artm_model.scores.add(artm.TopTokensScore(name='top_tokens_score_subject', class_id=class_name,
                           topic_names=subject_topics, num_tokens=n_top_tokens))
+    artm_model.scores.add(artm.TopicMassPhiScore(name='topic_mass_phi_score_subject', class_id=class_name, 
+                          topic_names=subject_topics))
     
-    # common
+    # common       
     artm_model.scores.add(artm.PerplexityScore(name='perplexity_score_common', dictionary=dictionary,
                           topic_names=common_topics))
     artm_model.scores.add(artm.SparsityPhiScore(name='ss_phi_score_common', class_id=class_name,
@@ -43,21 +47,16 @@ def add_complex_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_thr
                           topic_names=common_topics, probability_mass_threshold=p_mass_threshold))
     artm_model.scores.add(artm.TopTokensScore(name='top_tokens_score_common', class_id=class_name, 
                           topic_names=common_topics, num_tokens=n_top_tokens))
+    artm_model.scores.add(artm.TopicMassPhiScore(name='topic_mass_phi_score_common', class_id=class_name, 
+                          topic_names=common_topics))
     
-    # both
-    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_0.5', class_id=class_name,
-                                                          delta_threshold=0.5, save_tokens=True))
-    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_0.25', class_id=class_name,
-                                                          delta_threshold=0.25, save_tokens=True))
-    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_0.75', class_id=class_name,
-                                                          delta_threshold=0.75, save_tokens=True))
-    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_2', class_id=class_name,
-                                                          delta_threshold=2, save_tokens=True))
-    artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_5', class_id=class_name,
-                                                          delta_threshold=5, save_tokens=True))
+    # both      
+    for coeff in background_tokens_ratio_score_coeffs:
+        artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_{}'.format(coeff), class_id=class_name,
+                                                              delta_threshold=coeff, save_tokens=True))
 
 def fit_one_model_complex(plot_maker, batch_vectorizer, models_file, config, 
-                          model, _n_iterations, _model_name='', _debug_print=False): 
+                          model, _n_iterations, _model_name='',  _debug_print=False): 
     if _debug_print:
         print '[{}] fitting'.format(datetime.now())
     model.fit_offline(batch_vectorizer=batch_vectorizer, num_collection_passes=_n_iterations)
@@ -74,18 +73,18 @@ def fit_one_model_complex(plot_maker, batch_vectorizer, models_file, config,
     return model
 
 def create_model(current_dictionary, n_topics, n_doc_passes, seed_value, n_top_tokens, p_mass_threshold,
-                 class_name='@default_class', _debug_print=False):    
+                 class_name='@default_class', background_tokens_ratio_score_coeffs=[], _debug_print=False):    
     if _debug_print:
         print '[{}] creating model'.format(datetime.now())
     model = artm.ARTM(num_topics=n_topics, dictionary=current_dictionary, cache_theta=True, seed=seed_value, 
                   class_ids={class_name: 1.0})
     model.num_document_passes = n_doc_passes
     add_scores_to_model(model, current_dictionary, n_top_tokens=n_top_tokens, p_mass_threshold=p_mass_threshold,
-                       class_name=class_name)
+                       class_name=class_name, background_tokens_ratio_score_coeffs=background_tokens_ratio_score_coeffs)
     return model
 
 def add_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_threshold, 
-                        class_name, _debug_print=False):
+                        class_name, background_tokens_ratio_score_coeffs, _debug_print=False):
     if _debug_print:
         print '[{}] adding scores'.format(datetime.now())
     artm_model.scores.add(artm.PerplexityScore(name='perplexity_score',
@@ -95,7 +94,13 @@ def add_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_threshold,
     artm_model.scores.add(artm.TopicKernelScore(name='topic_kernel_score', class_id=class_name, 
                                                 probability_mass_threshold=p_mass_threshold))
     artm_model.scores.add(artm.TopTokensScore(name='top_tokens_score', class_id=class_name, num_tokens=n_top_tokens))
-
+    artm_model.scores.add(artm.TopicMassPhiScore(name='topic_mass_phi_score', class_id=class_name))
+    
+    # BackgroundTokensRatioScore
+    for coeff in background_tokens_ratio_score_coeffs:
+        artm_model.scores.add(artm.BackgroundTokensRatioScore(name='background_tokens_ratio_score_{}'.format(coeff), class_id=class_name,
+                                                          delta_threshold=coeff, save_tokens=True))        
+    
 def fit_one_model(plot_maker, batch_vectorizer, models_file, config, 
                   model, _n_iterations, _model_name='', _debug_print=False): 
     if _debug_print:

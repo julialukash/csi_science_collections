@@ -11,20 +11,22 @@ def print_scores(artm_model, model_name, n_iterations, output_file_name):
     else:
         print string
 
-def unicode_list_to_str(name, list):
-    return name + ': ' + ' '.join(list)
+def unicode_list_to_str(name, unicode_list):
+    return name + '| ' + ' '.join(unicode_list)
 
-def print_unicode_list(name, list, output_file):
-    string = unicode_list_to_str(name, list)
+def print_unicode_list(name, unicode_list, output_file):
+    string = unicode_list_to_str(name, unicode_list)
     if output_file != None:
         string = string + '\n'
         output_file.write(string.encode('UTF-8'))
     else:
         print string
 
-def print_top_tokens_list(saved_top_tokens, output_file):
+def print_top_tokens_list(saved_top_tokens, saved_top_tokens_weight, output_file):
     for topic_name, value in saved_top_tokens.iteritems():
-        print_unicode_list(topic_name, value, output_file)
+        weights = saved_top_tokens_weight[topic_name]
+        top_tokens_and_weight = [u'{0}: {1:.3f}'.format(value[idx], weights[idx]) for idx, _ in enumerate(value)]
+        print_unicode_list(topic_name, top_tokens_and_weight, output_file)
 
 def print_top_tokens(artm_model, output_file_name=''):          
     output_file = None
@@ -32,7 +34,7 @@ def print_top_tokens(artm_model, output_file_name=''):
         output_file = open(output_file_name, 'a')
     for name, score in sorted(artm_model.score_tracker.iteritems()):
         if type(score) is artm.score_tracker.TopTokensScoreTracker:
-            print_top_tokens_list(score.last_tokens, output_file)
+            print_top_tokens_list(score.last_tokens, score.last_weights, output_file)
     if output_file != None:
         output_file.close()
 

@@ -17,7 +17,7 @@ def dynamic_print(data):
     stdout.flush()
 
 def get_cost_matrix(original_distance, not_original_column_fine_right, not_test_column_fine_down, new_new_fine_corner=1e-5):
-    default_empty_value = 100
+    default_empty_value, eps = 100, 1e-5
     distance = original_distance.copy()
     # cut by threshold
     distance[distance > not_original_column_fine_right] = default_empty_value
@@ -28,7 +28,7 @@ def get_cost_matrix(original_distance, not_original_column_fine_right, not_test_
     expanded_down_matrix = pd.concat([down_matrix, corner_matrix], axis=1)
     expanded_matrix =  pd.concat([distance, right_matrix], axis=1)
     expanded_matrix =  pd.concat([expanded_matrix, expanded_down_matrix], axis=0)
-    expanded_matrix[expanded_matrix == 0] = default_empty_value
+    expanded_matrix[np.abs(expanded_matrix) < eps] = default_empty_value
     return expanded_matrix
 
 def indices_to_result(cost_matrix_not_expanded, row_ind, col_ind):
@@ -38,6 +38,7 @@ def indices_to_result(cost_matrix_not_expanded, row_ind, col_ind):
     indices = [(cost_matrix_not_expanded.index[val[0]], cost_matrix_not_expanded.columns[val[1]],
                 val[0], val[1], cost_matrix_not_expanded.iloc[val[0], val[1]]) for val in indices]
     return indices
+
 def get_hungarian_alg_result(cost_matrix, fine):
     expanded_cost = get_cost_matrix(cost_matrix, fine, fine, new_new_fine_corner=1e-5)
     row_ind, col_ind = linear_sum_assignment(expanded_cost)
