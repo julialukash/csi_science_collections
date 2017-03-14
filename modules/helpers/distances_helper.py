@@ -5,6 +5,9 @@ from numpy.linalg import norm as euclidean_norm
 from scipy.stats import entropy
 
 def kl_dist(p, q):
+    eps = 1e-30
+    p[p == 0] = eps
+    q[q == 0] = eps
     return entropy(p, q)
 
 def kl_sym_dist(p, q):

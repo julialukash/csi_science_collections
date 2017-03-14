@@ -56,7 +56,7 @@ def add_complex_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_thr
                                                               delta_threshold=coeff, save_tokens=True))
 
 def fit_one_model_complex(plot_maker, batch_vectorizer, models_file, config, 
-                          model, _n_iterations, _model_name='',  _debug_print=False): 
+                          model, _n_iterations, _model_name='', is_correct_topic_fn=None, _debug_print=False): 
     if _debug_print:
         print '[{}] fitting'.format(datetime.now())
     model.fit_offline(batch_vectorizer=batch_vectorizer, num_collection_passes=_n_iterations)
@@ -69,7 +69,7 @@ def fit_one_model_complex(plot_maker, batch_vectorizer, models_file, config,
     
     model_output_file_name = path.join(config.experiment_path, _model_name + '.txt')
     ph.print_scores(model, _model_name, _n_iterations, model_output_file_name)
-    ph.print_top_tokens(model, model_output_file_name)
+    ph.print_top_tokens(model, is_correct_topic_fn, model_output_file_name)
     return model
 
 def create_model(current_dictionary, n_topics, n_doc_passes, seed_value, n_top_tokens, p_mass_threshold,
@@ -102,7 +102,7 @@ def add_scores_to_model(artm_model, dictionary, n_top_tokens, p_mass_threshold,
                                                           delta_threshold=coeff, save_tokens=True))        
     
 def fit_one_model(plot_maker, batch_vectorizer, models_file, config, 
-                  model, _n_iterations, _model_name='', _debug_print=False): 
+                  model, _n_iterations, _model_name='', is_correct_topic_fn=None, _debug_print=False): 
     if _debug_print:
         print '[{}] fitting'.format(datetime.now())
     model.fit_offline(batch_vectorizer=batch_vectorizer, num_collection_passes=_n_iterations)
@@ -115,5 +115,5 @@ def fit_one_model(plot_maker, batch_vectorizer, models_file, config,
     
     model_output_file_name = path.join(config.experiment_path, _model_name + '.txt')
     ph.print_scores(model, _model_name, _n_iterations, model_output_file_name)
-    ph.print_top_tokens(model, model_output_file_name)
+    ph.print_top_tokens(model, is_correct_topic_fn, model_output_file_name)
     return model

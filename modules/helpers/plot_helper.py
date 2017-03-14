@@ -8,16 +8,16 @@ class PlotMaker:
         self.show_plots = show_plots
         if not self.show_plots:
             plt.ioff()
+        self.x_fig_size = 5
+        self.y_fig_size = 3
 
 
     def make_perplexity_plot(self, perplexity_values, title='',
                          start_iteration=1, end_iteration=-1):
-        x_fig_size = 4
-        y_fig_size = 2
         if end_iteration == -1:
             end_iteration = len(perplexity_values)
         sns.set_style("white")
-        plt.figure(figsize=(x_fig_size, y_fig_size))
+        plt.figure(figsize=(self.x_fig_size, self.y_fig_size))
         plt.title(title, fontsize=11)
         plt.ylabel('perplexity', fontsize=12)
         plt.xlabel('iterations', fontsize=12)
@@ -34,8 +34,6 @@ class PlotMaker:
     def make_perplexity_sparsity_plot(self, perplexity_values, sparse_phi_values, sparse_theta_values=[],
                                       model_name='', title='', filename_ending='',
                                       start_iteration=0, end_iteration=-1):
-        x_fig_size = 4
-        y_fig_size = 2
         if end_iteration == -1:
             end_iteration = len(perplexity_values)
         x_values = range(start_iteration, end_iteration)
@@ -45,7 +43,7 @@ class PlotMaker:
 
         sns.set_style("white")
         sns.set_color_codes()
-        fig, ax1 = plt.subplots(figsize=(x_fig_size, y_fig_size))
+        fig, ax1 = plt.subplots(figsize=(self.x_fig_size, self.y_fig_size))
         plt.title(title, fontsize=11)
         plt.xlabel('iterations', fontsize=9)
         plt.grid(axis='x',color='grey', linestyle='--', lw=0.5, alpha=0.5)
@@ -72,8 +70,6 @@ class PlotMaker:
 
     def make_kernel_size_purity_contrast_plot(self, topic_kernel_score, model_name='', title='', filename_ending = '',
                                               start_iteration=0, end_iteration=-1):
-        x_fig_size = 4
-        y_fig_size = 2
         if end_iteration == -1:
             end_iteration = len(topic_kernel_score.average_size)
         x_values = range(start_iteration, end_iteration)
@@ -83,7 +79,7 @@ class PlotMaker:
 
         sns.set_style("white")
         sns.set_color_codes()
-        fig, ax1 = plt.subplots(figsize=(x_fig_size, y_fig_size))
+        fig, ax1 = plt.subplots(figsize=(self.x_fig_size, self.y_fig_size))
         plt.title(title, fontsize=11)
         plt.xlabel('iterations', fontsize=9)
         plt.grid(axis='x',color='grey', linestyle='--', lw=0.5, alpha=0.5)
@@ -108,6 +104,33 @@ class PlotMaker:
             fig.savefig(model_name + '_ksp' + filename_ending, transparent=True, bbox_inches='tight', pad_inches=0)
             plt.close(fig)
 
+    def make_topic_mass_phi_plot(self, topic_mass_score, model_name='', title='', filename_ending = '',
+                                 start_iteration=0, end_iteration=-1):
+        if end_iteration == -1:
+            end_iteration = len(topic_mass_score.topic_mass)
+        x_values = range(start_iteration, end_iteration)
+        y_values_1 = [sum(1 for val in it_list.values() if val > 1e-2) for it_list in topic_mass_score.topic_mass]
+
+        sns.set_style("white")
+        sns.set_color_codes()
+        fig, ax1 = plt.subplots(figsize=(self.x_fig_size, self.y_fig_size))
+        plt.title(title, fontsize=11)
+        plt.xlabel('iterations', fontsize=9)
+        plt.grid(axis='x',color='grey', linestyle='--', lw=0.5, alpha=0.5)
+        plt.grid(axis='y',color='grey', linestyle='--', lw=0.5, alpha=0.5)
+        plt.tick_params(axis='both', labelsize=9)
+        plot1 = ax1.plot(x_values, y_values_1, 'bo-', label='avg kernel size')
+        ax1.set_ylabel('non_zero_topics count', fontsize=9)
+        for tl in ax1.get_yticklabels():
+            tl.set_color('b')
+
+        if self.show_plots:
+            plt.show()
+        if model_name != '':
+            fig.savefig(model_name + '_phi' + filename_ending, transparent=True, bbox_inches='tight', pad_inches=0)
+            plt.close(fig)
+
+       
     def artm_model_to_str(self, artm_model, n_iterations=-1):
         str_model = 'n_topics = {}, n_doc_passes = {}, seed_value = {}'\
                     .format(artm_model.num_topics, artm_model.num_document_passes, artm_model.seed)
@@ -134,6 +157,8 @@ class PlotMaker:
         self.make_kernel_size_purity_contrast_plot(artm_model.score_tracker['topic_kernel_score'],
                                                    title=title_str,
                                                    model_name=model_name)
+        self.make_topic_mass_phi_plot(artm_model.score_tracker['topic_mass_phi_score'], model_name=model_name,
+                                      title=title_str)
     
     def make_tm_plots_complex(self, artm_model, model_name=''):
         title_str = self.artm_model_to_str(artm_model)
@@ -146,6 +171,8 @@ class PlotMaker:
         self.make_kernel_size_purity_contrast_plot(artm_model.score_tracker['topic_kernel_score_common'],
                                                    title=title_str, filename_ending = '_common',
                                                    model_name=model_name)
+        self.make_topic_mass_phi_plot(artm_model.score_tracker['topic_mass_phi_score_common'], model_name=model_name,
+                                      title=title_str, filename_ending = '_common')
         # subject topics
         self.make_perplexity_sparsity_plot(artm_model.score_tracker['perplexity_score_subject'].value,
                                       artm_model.score_tracker['ss_phi_score_subject'].value,
@@ -154,4 +181,6 @@ class PlotMaker:
                                       model_name=model_name)
         self.make_kernel_size_purity_contrast_plot(artm_model.score_tracker['topic_kernel_score_subject'],
                                                    title=title_str, filename_ending = '_subject',
-                                                   model_name=model_name)
+                                                   model_name=model_name)        
+        self.make_topic_mass_phi_plot(artm_model.score_tracker['topic_mass_phi_score_subject'], model_name=model_name,
+                                      title=title_str, filename_ending = '_subject')

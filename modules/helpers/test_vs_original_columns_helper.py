@@ -57,8 +57,12 @@ def get_test_to_original_result(phi_test, phi_original, dist_fn, thresholds):
 def get_test_to_original_result_different_distances(phi_test, phi_original, thresholds=np.arange(0.05, 1, 0.05)):
     different_distances = {}
     distances = [dh.jaccard_dist, dh.cos_dist, dh.hellinger_dist, dh.kl_dist, dh.kl_sym_dist]
+    kl_thresholds = [10, 20, 30, 40, 50]
     for dist_fn in distances:
-        results = get_test_to_original_result(phi_test, phi_original, dist_fn, thresholds)
+        if dist_fn is dh.kl_dist or dist_fn is dh.kl_sym_dist:
+            results = get_test_to_original_result(phi_test, phi_original, dist_fn, kl_thresholds)
+        else:
+            results = get_test_to_original_result(phi_test, phi_original, dist_fn, thresholds)
         threshold_and_original_columns_count = sorted([(key, len(results[key])) for key in results.iterkeys()])
         different_distances[dist_fn] = (threshold_and_original_columns_count, results)
     return different_distances

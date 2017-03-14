@@ -21,20 +21,48 @@ def print_unicode_list(name, unicode_list, output_file):
         output_file.write(string.encode('UTF-8'))
     else:
         print string
+        
+def print_to_file(output_file, string):
+    if output_file != None:        
+        output_file.write(string.encode('UTF-8'))
+    else:
+        print string
 
-def print_top_tokens_list(saved_top_tokens, saved_top_tokens_weight, output_file):
-    for topic_name, value in saved_top_tokens.iteritems():
+def print_top_tokens_list(is_correct_topic_fn, saved_top_tokens, saved_top_tokens_weight, output_file):
+    if is_correct_topic_fn != None:
+        correct_topics = [topic_name for topic_name, value in saved_top_tokens.iteritems() if is_correct_topic_fn(saved_top_tokens_weight[topic_name])]
+    else:
+        correct_topics = saved_top_tokens.keys() 
+    incorrect_topics = set(saved_top_tokens_weight.keys()) - set(correct_topics)    
+    empty_topics = set()
+    for topic_name in correct_topics:
         weights = saved_top_tokens_weight[topic_name]
-        top_tokens_and_weight = [u'{0}: {1:.3f}'.format(value[idx], weights[idx]) for idx, _ in enumerate(value)]
+        top_words = saved_top_tokens[topic_name]
+        top_tokens_and_weight = [u'{0}: {1:.3f}'.format(top_words[idx], weights[idx]) for idx, _ in enumerate(top_words) if weights[idx] != 0]
         print_unicode_list(topic_name, top_tokens_and_weight, output_file)
-
-def print_top_tokens(artm_model, output_file_name=''):          
+    print_to_file(output_file, "====================================================================================\n")
+    for topic_name in incorrect_topics:
+        weights = saved_top_tokens_weight[topic_name]
+        top_words = saved_top_tokens[topic_name]
+        top_tokens_and_weight = [u'{0}: {1:.3f}'.format(top_words[idx], weights[idx]) for idx, _ in enumerate(top_words) if weights[idx] != 0]
+        if len(top_tokens_and_weight):
+            print_unicode_list(topic_name, top_tokens_and_weight, output_file)
+        else:
+            empty_topics.add(topic_name)
+    print_to_file(output_file, "====================================================================================\n")
+    for topic_name in empty_topics:
+        weights = saved_top_tokens_weight[topic_name]
+        top_words = saved_top_tokens[topic_name]
+        top_tokens_and_weight = [u'{0}: {1:.3f}'.format(top_words[idx], weights[idx]) for idx, _ in enumerate(top_words) if weights[idx] != 0]
+        print_unicode_list(topic_name, top_tokens_and_weight, output_file)
+    
+def print_top_tokens(artm_model, is_correct_topic_fn, output_file_name=''):          
     output_file = None
     if output_file_name != '':
         output_file = open(output_file_name, 'a')
     for name, score in sorted(artm_model.score_tracker.iteritems()):
         if type(score) is artm.score_tracker.TopTokensScoreTracker:
-            print_top_tokens_list(score.last_tokens, score.last_weights, output_file)
+            print_top_tokens_list(is_correct_topic_fn, score.last_tokens, score.last_weights, output_file)
     if output_file != None:
         output_file.close()
 
