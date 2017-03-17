@@ -160,3 +160,16 @@ def optimal_solution_topics_to_str(_saved_top_tokens, _other_saved_top_tokens, t
     str = unicode_list_to_str(topic_name, _saved_top_tokens[topic_name]) + '\n'
     str += '\n'.join([unicode_list_to_str(name, _other_saved_top_tokens[name]) for name in topics])
     return str
+
+# ==================================================== two phi matrices =================================================================
+def print_phi_top_tokens_list(phi, n_top_tokens):
+    top_tokens_and_weight = [(topic_name, topic.sort_values()[::-1][0:n_top_tokens].iteritems()) for topic_name, topic in phi.iteritems()]    
+    top_tokens_and_weight = [u'{} | '.format(topic_name) + ' '.join([u'{0}: {1:.3f}'.format(topic, weight) for topic, weight in val if weight != 0]) for topic_name, val in top_tokens_and_weight]
+    top_tokens_and_weight = '\n'.join(top_tokens_and_weight)
+    print(top_tokens_and_weight)
+    
+def print_phi_top_tokens(phi, phi_other, n_top_tokens=15):
+    print("\n------------------------------------------------------------ phi ------------------------------------------------------------")
+    print_phi_top_tokens_list(phi, n_top_tokens)
+    print("\n----------------------------------------------------------- phi other ------------------------------------------------------")
+    print_phi_top_tokens_list(phi_other, n_top_tokens)

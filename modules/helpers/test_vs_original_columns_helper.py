@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 import distances_helper as dh 
+import build_convex_hull_helper as bchh
 
 def dynamic_print(data):
     stdout.write("\r\x1b[K"+data.__str__())
@@ -50,14 +51,15 @@ def get_test_to_original_result(phi_test, phi_original, dist_fn, thresholds):
     results = {}
     for th in thresholds:
         res, expanded_cost, row_ind, col_ind = get_hungarian_alg_result(cost, th)
-        dynamic_print('Processed th = {}, original columns count = {}    '.format(th, len(res)))
+        dynamic_print('Dist fn = {}, Processed th = {}, original columns count = {}    '.format(dist_fn, th, len(res)))
         results[th] = res
     return results
 
-def get_test_to_original_result_different_distances(phi_test, phi_original, thresholds=np.arange(0.05, 1, 0.05)):
+def get_test_to_original_result_different_distances(phi_test, phi_original, 
+     distances=[dh.jaccard_dist, dh.cos_dist, dh.hellinger_dist, dh.kl_dist, dh.kl_sym_dist],
+     thresholds=np.arange(0.05, 1, 0.05)):
     different_distances = {}
-    distances = [dh.jaccard_dist, dh.cos_dist, dh.hellinger_dist, dh.kl_dist, dh.kl_sym_dist]
-    kl_thresholds = [5, 10, 15, 20, 30, 40]
+    kl_thresholds = [5, 10, 15, 20, 30, 40, 50, 60, 80, 100]
     for dist_fn in distances:
         if dist_fn is dh.kl_dist or dist_fn is dh.kl_sym_dist:
             results = get_test_to_original_result(phi_test, phi_original, dist_fn, kl_thresholds)
@@ -66,6 +68,43 @@ def get_test_to_original_result_different_distances(phi_test, phi_original, thre
         threshold_and_original_columns_count = sorted([(key, len(results[key])) for key in results.iterkeys()])
         different_distances[dist_fn] = (threshold_and_original_columns_count, results)
     return different_distances
+
+#============================================================= opt res =================================================================
+
+def get_test_to_original_opt_result_different_distances(phi_test, phi_original, 
+            distances=[dh.jaccard_dist, dh.cos_dist, dh.hellinger_dist, dh.kl_dist, dh.kl_sym_dist], 
+            thresholds=np.arange(0.05, 1.05, 0.05)):
+    different_distances = {}
+    kl_thresholds = [5, 10, 15, 20, 30, 40, 50, 60, 80, 100]
+    for dist_fn in distances:
+        if dist_fn is dh.kl_dist or dist_fn is dh.kl_sym_dist:
+            results = get_test_to_original_opt_result(phi_test, phi_original, dist_fn, kl_thresholds)
+        else:
+            results = get_test_to_original_opt_result(phi_test, phi_original, dist_fn, thresholds)
+        threshold_and_original_columns_count = sorted([(key, len(results[key])) for key in results.iterkeys()])
+        different_distances[dist_fn] = (threshold_and_original_columns_count, results)
+    return different_distances
+
+def get_test_to_original_opt_result(phi_test, phi_original, dist_fn, thresholds):
+    cost = get_cost_opt_matrix(dist_fn, phi_test, phi_original)
+    results = {}
+    for th in thresholds:
+        res, expanded_cost, row_ind, col_ind = get_hungarian_alg_result(cost, th)
+        dynamic_print('Dist fn = {}, Processed th = {}, original columns count = {}    '.format(dist_fn, th, len(res)))
+        results[th] = res
+    return results
+
+def get_cost_opt_matrix(dist_fn, phi_test, phi_original):
+    N_CLOSEST_TOPICS = 15
+    tmp_distances = dh.calculate_distances(dist_fn, phi_test, phi_original)
+    opt_res = bchh.get_optimization_result(dist_fn, None, phi_test, phi_original, tmp_distances, N_CLOSEST_TOPICS)
+    cost_matrix = pd.DataFrame(100, index=phi_test.columns, columns=phi_original.columns)
+    for idx, (column_name, opt_res_single_column) in enumerate(opt_res.iteritems()):
+        if idx < cost_matrix.shape[1]:
+            cost_matrix.loc[column_name, phi_original.columns[idx]] = opt_res_single_column['fun']
+    return cost_matrix
+
+#======================================================= plot ===========================================================================
 
 def plot_original_columns_count_different_distances(different_distances, n_original_columns_count=100):
     sns.set_style("darkgrid")
@@ -90,16 +129,19 @@ def plot_original_columns_count_different_distances(different_distances, n_origi
     ax1.set_ylabel('original shape count')
     ax1.legend()
 
-    threshold_and_original_columns_count = different_distances[dh.kl_dist][0]
-    x,y = zip(*threshold_and_original_columns_count)
-    ax2.plot(x, y, 'bo-', label='kl')
+    if dh.kl_dist in different_distances.keys():
+        threshold_and_original_columns_count = different_distances[dh.kl_dist][0]
+        x,y = zip(*threshold_and_original_columns_count)
+        ax2.plot(x, y, 'bo-', label='kl')
 
-    threshold_and_original_columns_count = different_distances[dh.kl_sym_dist][0]
-    x,y = zip(*threshold_and_original_columns_count)
-    ax2.plot(x, y, 'mo-', label='kl sym')
+    if dh.kl_sym_dist in different_distances.keys():
+        threshold_and_original_columns_count = different_distances[dh.kl_sym_dist][0]
+        x,y = zip(*threshold_and_original_columns_count)
+        ax2.plot(x, y, 'mo-', label='kl sym')
 
     ax2.plot([0, 1], [n_original_columns_count, n_original_columns_count], linewidth=2, color='g', linestyle='--')
 
     ax2.set_xlabel('thresholds')
     ax2.set_ylabel('original shape count')
     ax2.legend()
+ 
