@@ -55,7 +55,7 @@ def plsa_em_vectorized_fixed_phi(n_dw, num_topics, Phi_init, max_iter=25, Theta_
         else:
             old_perplexity_value = perplexity_value
 
-def get_em_result(dist_fn, jac_dist_fn, phi, phi_other, distances, previous_opt_result, 
+def get_em_result(dist_fn, jac_dist_fn, phi, column_name, phi_other, distances, previous_opt_result, 
                   n_closest_topics, _debug_print=False):
     phi_other_columns = phi_other.columns
     # cut distances by phi columns 
@@ -88,7 +88,7 @@ def get_em_result_one_matrix(dist_fn, jac_dist_fn, phi, distances,
         column = phi[col_name].to_frame()
         # delete col from phi
         phi_cut = phi.drop(col_name, axis=1)
-        opt_results[col_name] = get_em_result(dist_fn, jac_dist_fn, column, phi_cut, distances, n_closest_topics,
+        opt_results[col_name] = get_em_result(dist_fn, jac_dist_fn, column, col_name, phi_cut, distances, n_closest_topics,
                                               _debug_print).values()[0]
     return opt_results
 
@@ -122,7 +122,7 @@ def get_optimization_result(dist_fn, jac_dist_fn, phi, phi_other, distances, n_c
 
 def solve_optimization_problem(dist_fn, jac_dist_fn, column, column_name, phi, distances, 
                                previous_opt_result,
-                               n_closest_topics, max_iter=50, max_runs_count=7, verbose=False):
+                               n_closest_topics, max_iter=30, max_runs_count=4, verbose=False):
     phi_columns = phi.columns
     # cut distances by phi columns 
     cut_distances = distances[phi_columns]

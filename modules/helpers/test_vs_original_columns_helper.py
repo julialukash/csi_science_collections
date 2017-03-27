@@ -106,7 +106,7 @@ def get_cost_opt_matrix(dist_fn, phi_test, phi_original):
 
 #======================================================= plot ===========================================================================
 
-def plot_original_columns_count_different_distances(different_distances, n_original_columns_count=100):
+def plot_original_columns_count_different_distances(different_distances, n_original_columns_count, title=''):
     sns.set_style("darkgrid")
     
     fig, (ax1, ax2) = plt.subplots(ncols=2, sharey=False, figsize=(15,5))
@@ -144,4 +144,6 @@ def plot_original_columns_count_different_distances(different_distances, n_origi
     ax2.set_xlabel('thresholds')
     ax2.set_ylabel('original shape count')
     ax2.legend()
+    if title != '':
+        fig.suptitle(title, fontsize=14, fontweight='bold')
  

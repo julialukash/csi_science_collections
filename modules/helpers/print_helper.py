@@ -173,3 +173,4 @@ def print_phi_top_tokens(phi, phi_other, n_top_tokens=15):
     print_phi_top_tokens_list(phi, n_top_tokens)
     print("\n----------------------------------------------------------- phi other ------------------------------------------------------")
     print_phi_top_tokens_list(phi_other, n_top_tokens)
+    
