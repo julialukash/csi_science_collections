@@ -122,7 +122,8 @@ def get_optimization_result(dist_fn, jac_dist_fn, phi, phi_other, distances, n_c
 
 def solve_optimization_problem(dist_fn, jac_dist_fn, column, column_name, phi, distances, 
                                previous_opt_result,
-                               n_closest_topics, max_iter=30, max_runs_count=4, verbose=False):
+                               n_closest_topics, max_iter=30, max_runs_count=4, verbose=False,
+                               init_closest=False):
     phi_columns = phi.columns
     # cut distances by phi columns 
     cut_distances = distances[phi_columns]
@@ -144,7 +145,11 @@ def solve_optimization_problem(dist_fn, jac_dist_fn, column, column_name, phi, d
     it = 0
     while (not is_optimized) and it != max_runs_count:
         it += 1
-        init_x = np.random.uniform(0, 1, (1, n_columns))
+        if init_closest:
+            init_x = np.random.uniform(0, 0.4, (1, n_columns)) 
+            init_x[0] = 0.5
+        else:
+            init_x = np.random.uniform(0, 1, (1, n_columns))
         init_x /= np.sum(init_x)
         if jac_dist_fn is not None:
             res = minimize(opt_fun, jac=jac_fun, x0=init_x, method='SLSQP', bounds=bnds, constraints=cons, options={'maxiter': max_iter, 'disp': verbose})

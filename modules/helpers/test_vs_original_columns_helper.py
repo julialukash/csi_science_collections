@@ -111,18 +111,21 @@ def plot_original_columns_count_different_distances(different_distances, n_origi
     
     fig, (ax1, ax2) = plt.subplots(ncols=2, sharey=False, figsize=(15,5))
 
-    threshold_and_original_columns_count = different_distances[dh.jaccard_dist][0]
-    x,y = zip(*threshold_and_original_columns_count)
-    ax1.plot(x, y, 'ro-', label='jaccard')
+    if dh.jaccard_dist in different_distances.keys():    
+        threshold_and_original_columns_count = different_distances[dh.jaccard_dist][0]
+        x,y = zip(*threshold_and_original_columns_count)
+        ax1.plot(x, y, 'ro-', label='jaccard')
 
-    threshold_and_original_columns_count = different_distances[dh.cos_dist][0]
-    x,y = zip(*threshold_and_original_columns_count)
-    ax1.plot(x, y, 'bo-', label='cos')
+    if dh.cos_dist in different_distances.keys():    
+        threshold_and_original_columns_count = different_distances[dh.cos_dist][0]
+        x,y = zip(*threshold_and_original_columns_count)
+        ax1.plot(x, y, 'bo-', label='cos')
 
-    threshold_and_original_columns_count = different_distances[dh.hellinger_dist][0]
-    x,y = zip(*threshold_and_original_columns_count)
-    ax1.plot(x, y, 'yo-', label='hellinger')
-    
+    if dh.hellinger_dist in different_distances.keys():    
+        threshold_and_original_columns_count = different_distances[dh.hellinger_dist][0]
+        x,y = zip(*threshold_and_original_columns_count)
+        ax1.plot(x, y, 'yo-', label='hellinger')
+
     ax1.plot([0, 1], [n_original_columns_count, n_original_columns_count], linewidth=2, color='g', linestyle='--')
 
     ax1.set_xlabel('thresholds')
